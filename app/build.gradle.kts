@@ -26,12 +26,21 @@ android {
     }
 
     signingConfigs {
-        // توقيع محلي للنسخة الـrelease بمفتاح الـdebug عشان نقدر نثبّتها ونجرّب الأداء الحقيقي
+        // توقيع ثابت: في CI المفتاح بييجي من GitHub Secrets (متغيرات بيئة).
+        // محليًا (من غير المتغيرات) بنرجع لمفتاح الـdebug عشان البناء يشتغل.
         create("releaseLocal") {
-            storeFile = file(System.getProperty("user.home") + "/.android/debug.keystore")
-            storePassword = "android"
-            keyAlias = "androiddebugkey"
-            keyPassword = "android"
+            val ciKeystore = System.getenv("KEYSTORE_FILE")
+            if (!ciKeystore.isNullOrBlank()) {
+                storeFile = file(ciKeystore)
+                storePassword = System.getenv("KEYSTORE_PASSWORD")
+                keyAlias = System.getenv("KEY_ALIAS")
+                keyPassword = System.getenv("KEY_PASSWORD")
+            } else {
+                storeFile = file(System.getProperty("user.home") + "/.android/debug.keystore")
+                storePassword = "android"
+                keyAlias = "androiddebugkey"
+                keyPassword = "android"
+            }
         }
     }
 
