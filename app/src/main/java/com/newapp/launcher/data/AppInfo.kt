@@ -15,6 +15,15 @@ data class AppInfo(
     }
 }
 
+/** اختصار تطبيق (App Shortcut) */
+@Immutable
+data class AppShortcut(
+    val id: String,
+    val packageName: String,
+    val label: String,
+    val icon: androidx.compose.ui.graphics.ImageBitmap?
+)
+
 /** نتيجة بحث في جهات الاتصال */
 @Immutable
 data class ContactHit(val name: String, val number: String)
