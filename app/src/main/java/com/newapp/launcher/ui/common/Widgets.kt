@@ -7,6 +7,9 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.ui.layout.positionInRoot
+import androidx.compose.ui.draw.alpha
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -23,8 +26,6 @@ import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
-import androidx.compose.ui.window.Popup
-import androidx.compose.ui.window.PopupProperties
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -65,6 +66,7 @@ enum class Slot { HOME, DOCK, DRAWER }
 data class ActionSpec(
     val label: String,
     val iconRes: Int = 0,
+    val iconBitmap: ImageBitmap? = null,
     val onClick: () -> Unit
 )
 
@@ -98,9 +100,10 @@ fun AppIconImage(
 }
 
 /**
- * قائمة الضغط المطوّل: Popup صغير يظهر بجانب الأيقونة مباشرة.
- * - primary: حتى ٤ أيقونات في صف واحد.
- * - secondary: أي خيار إضافي يظهر تحتها بعنوان + أيقونة.
+ * قائمة الضغط المطوّل: كارت داكن مدوّر وصغير فوق الواجهة (مش نافذة منفصلة).
+ * - primary: صف الأيقونات فوق (سلة المهملات + معلومات...) ثم خط فاصل.
+ * - secondary: قائمة الاختصارات/الخيارات تحت.
+ * بتتحط جنب مكان الضغط ومتنزلش عن نص الشاشة تقريبًا. لمسة برّه الكارت بتقفلها.
  */
 @Composable
 fun ActionSheet(
@@ -108,60 +111,107 @@ fun ActionSheet(
     primary: List<ActionSpec>,
     secondary: List<ActionSpec>,
     anchor: Offset,
-    onDismiss: () -> Unit
+    onDismiss: () -> Unit,
+    iconOnlyPrimary: Boolean = false
 ) {
     val density = LocalDensity.current
     var cardSize by remember { mutableStateOf(IntSize.Zero) }
+    var boxSize by remember { mutableStateOf(IntSize.Zero) }
+    var origin by remember { mutableStateOf(Offset.Zero) }
 
     val margin = with(density) { 12.dp.toPx() }
-    val gap = with(density) { 8.dp.toPx() }
+    val below = with(density) { 44.dp.toPx() }
 
-    // نحسب الموضع: فوق الأيقونة أو تحتها حسب المساحة المتاحة
-    // نستخدم Popup مع usePlatformDefaultWidth=false للحصول على حجم الكارت الطبيعي
-    Popup(
-        alignment = Alignment.TopStart,
-        offset = IntOffset.Zero,
-        onDismissRequest = onDismiss,
-        properties = PopupProperties(focusable = false, clippingEnabled = false)
+    Box(
+        Modifier
+            .fillMaxSize()
+            .onGloballyPositioned {
+                boxSize = it.size
+                origin = it.positionInRoot()
+            }
+            .pointerInput(Unit) { detectTapGestures(onTap = { onDismiss() }) }
     ) {
         Column(
             modifier = Modifier
-                .offset { IntOffset(
-                    (anchor.x - cardSize.width / 2f).roundToInt().coerceAtLeast(margin.roundToInt()),
-                    (anchor.y - cardSize.height - gap).roundToInt().coerceAtLeast(margin.roundToInt())
-                ) }
+                .offset {
+                    val a = anchor - origin
+                    val maxX = (boxSize.width - cardSize.width - margin).coerceAtLeast(margin)
+                    val x = (a.x - cardSize.width / 2f).coerceIn(margin, maxX)
+                    // لا ينزل أبدًا عن نص الشاشة، ولا يخرج من أسفلها
+                    val maxY = minOf(boxSize.height * 0.5f, boxSize.height - cardSize.height - margin)
+                        .coerceAtLeast(margin)
+                    val y = (a.y + below).coerceIn(margin, maxY)
+                    IntOffset(x.roundToInt(), y.roundToInt())
+                }
+                .alpha(if (cardSize == IntSize.Zero) 0f else 1f)
                 .onGloballyPositioned { cardSize = it.size }
                 .pointerInput(Unit) { detectTapGestures { } }
-                .clip(RoundedCornerShape(16.dp))
-                .background(Color(0xF21B2029))
-                .padding(horizontal = 8.dp, vertical = 7.dp),
-            horizontalAlignment = Alignment.CenterHorizontally
+                .width(220.dp)
+                .clip(RoundedCornerShape(22.dp))
+                .background(Color(0xFA202124))
+                .padding(horizontal = 10.dp, vertical = 8.dp)
         ) {
             if (title.isNotBlank()) {
                 Text(
                     text = title,
                     color = Color.White.copy(alpha = 0.85f),
-                    fontSize = 11.sp,
+                    fontSize = 12.sp,
                     maxLines = 1,
-                    modifier = Modifier.padding(bottom = 5.dp)
+                    modifier = Modifier.padding(start = 6.dp, bottom = 4.dp)
                 )
             }
-            Row(horizontalArrangement = Arrangement.spacedBy(2.dp)) {
-                primary.forEach { action ->
-                    IconAction(action = action, onClick = {
-                        action.onClick()
-                        onDismiss()
-                    })
+            if (primary.isNotEmpty()) {
+                if (iconOnlyPrimary) {
+                    Row(
+                        Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        primary.forEach { action ->
+                            Box(
+                                Modifier
+                                    .size(40.dp)
+                                    .clip(CircleShape)
+                                    .clickable {
+                                        action.onClick()
+                                        onDismiss()
+                                    },
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Icon(
+                                    painter = painterResource(action.iconRes),
+                                    contentDescription = action.label,
+                                    tint = Color.White,
+                                    modifier = Modifier.size(24.dp)
+                                )
+                            }
+                        }
+                    }
+                } else {
+                    Row(
+                        Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceEvenly
+                    ) {
+                        primary.forEach { action ->
+                            IconAction(action = action, onClick = {
+                                action.onClick()
+                                onDismiss()
+                            })
+                        }
+                    }
                 }
             }
-            if (secondary.isNotEmpty()) {
+            if (primary.isNotEmpty() && secondary.isNotEmpty()) {
                 HorizontalDivider(
                     modifier = Modifier.padding(vertical = 6.dp),
-                    color = Color.White.copy(alpha = 0.12f)
+                    color = Color.White.copy(alpha = 0.18f)
                 )
+            }
+            if (secondary.isNotEmpty()) {
                 Column(
                     Modifier
-                        .width(178.dp)
+                        .fillMaxWidth()
+                        .heightIn(max = 280.dp)
                         .verticalScroll(rememberScrollState())
                 ) {
                     secondary.forEach { action ->
@@ -221,7 +271,13 @@ private fun ListAction(action: ActionSpec, onClick: () -> Unit) {
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(10.dp)
     ) {
-        if (action.iconRes != 0) {
+        if (action.iconBitmap != null) {
+            androidx.compose.foundation.Image(
+                bitmap = action.iconBitmap,
+                contentDescription = null,
+                modifier = Modifier.size(22.dp)
+            )
+        } else if (action.iconRes != 0) {
             Icon(
                 painter = painterResource(action.iconRes),
                 contentDescription = null,
