@@ -123,12 +123,11 @@ fun DragGrid(
                     }
 
                     if (outcome == "up") {
-                        val moved = (pointerInContainer - down.position).getDistance()
                         // لو فيه سحب سابق، متفتحش التطبيق
                         if (!dragNotified) {
-                            if (startItem != null && moved < 10f) {
+                            if (startItem != null) {
                                 onLaunch(startItem)
-                            } else if (startItem == null && moved < 10f) {
+                            } else {
                                 // نقرتين على مساحة فاضية = فعل مخصص (مثلاً قفل الشاشة)
                                 val now = System.currentTimeMillis()
                                 val delta = now - lastEmptyTapAt
