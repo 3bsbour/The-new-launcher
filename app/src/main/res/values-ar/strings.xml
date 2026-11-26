@@ -1,0 +1,176 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">لانشر جديد</string>
+    <string name="settings_title">إعدادات اللانشر</string>
+    <string name="language_section">اللغة</string>
+    <string name="language_label">لغة التطبيق</string>
+    <string name="language_system">لغة النظام</string>
+    <string name="language_arabic">العربية</string>
+    <string name="language_english">English</string>
+
+    <string name="search_hint">ابحث في التطبيقات وجهات الاتصال…</string>
+    <string name="all_apps">كل التطبيقات</string>
+    <string name="hidden_apps">التطبيقات المخفية</string>
+    <string name="search_contacts">ابحث في جهات الاتصال</string>
+    <string name="search_web">ابحث في الويب عن «%1$s»</string>
+    <string name="no_results">لا توجد نتائج</string>
+
+    <string name="menu_add_home">إضافة للشاشة الرئيسية</string>
+    <string name="menu_add_dock">إضافة للشريط السفلي</string>
+    <string name="menu_rename">تغيير الاسم</string>
+    <string name="menu_hide">إخفاء</string>
+    <string name="menu_unhide">إظهار</string>
+    <string name="menu_remove_home">إزالة من الشاشة الرئيسية</string>
+    <string name="menu_remove_dock">إزالة من الشريط السفلي</string>
+    <string name="menu_app_info">معلومات التطبيق</string>
+    <string name="menu_uninstall">إلغاء التثبيت</string>
+    <string name="rename_title">تغيير اسم التطبيق</string>
+    <string name="ok">موافق</string>
+    <string name="cancel">إلغاء</string>
+    <string name="reset_name">استعادة الاسم الأصلي</string>
+
+    <string name="home_menu_title">الشاشة الرئيسية</string>
+    <string name="open_drawer">كل التطبيقات</string>
+    <string name="wallpaper">الخلفية</string>
+    <string name="settings">الإعدادات</string>
+
+    <string name="wallpaper_title">الخلفية</string>
+    <string name="wallpaper_pick">اختر صورة</string>
+    <string name="wallpaper_system">استخدم خلفية النظام</string>
+    <string name="wallpaper_dim">تعتيم</string>
+
+    <string name="layout_section">التنسيق</string>
+    <string name="columns">الأعمدة</string>
+    <string name="rows">الصفوف</string>
+    <string name="icon_size">حجم الأيقونة</string>
+    <string name="show_labels">إظهار أسماء التطبيقات</string>
+    <string name="drawer_section">درج التطبيقات</string>
+    <string name="drawer_columns">أعمدة الدرج</string>
+    <string name="hidden_empty">لا توجد تطبيقات مخفية</string>
+    <string name="reset_layout">إعادة ضبط الشاشة الرئيسية</string>
+    <string name="reset_done">تم إعادة ضبط الشاشة الرئيسية</string>
+    <string name="about_section">حول التطبيق</string>
+    <string name="about_text">لانشر جديد إصدار 1.0 — شاشة رئيسية خفيفة.</string>
+    <string name="set_default_hint">لتستخدمه كشاشة رئيسية افتراضية، افتح إعدادات النظام واختر «لانشر جديد».</string>
+    <string name="open_default_settings">اختيار الشاشة الافتراضية</string>
+
+    <!-- التابات -->
+    <string name="tabs_section">تابات الدرج</string>
+    <string name="tab_all">كل التطبيقات</string>
+    <string name="tab_new">تاب جديد</string>
+    <string name="tab_name_hint">اسم التاب</string>
+    <string name="tab_default">التاب الافتراضي</string>
+    <string name="tab_delete">حذف التاب</string>
+    <string name="tab_rename">تغيير اسم التاب</string>
+    <string name="tab_edit">تعديل التاب</string>
+    <string name="tab_add_app">إضافة تطبيق</string>
+    <string name="tab_remove_app">إزالة</string>
+    <string name="tab_no_apps">لا توجد تطبيقات في هذا التاب</string>
+    <string name="tab_letters">الحروف</string>
+    <string name="tab_custom">تابات مخصصة</string>
+    <string name="tab_add_plus">+</string>
+
+    <!-- الفولدرات -->
+    <string name="folder_new">فولدر جديد</string>
+    <string name="folder_name">اسم الفولدر</string>
+    <string name="folder_settings">إعدادات الفولدر</string>
+    <string name="folder_delete">حذف الفولدر</string>
+    <string name="folder_rename">تغيير اسم الفولدر</string>
+    <string name="folder_style">شكل العرض</string>
+    <string name="folder_style_vertical">رأسي</string>
+    <string name="folder_style_horizontal">أفقي</string>
+    <string name="folder_image">صورة الفولدر</string>
+    <string name="folder_image_pick">اختر صورة</string>
+    <string name="folder_image_clear">إزالة الصورة</string>
+    <string name="folder_columns">الأعمدة</string>
+    <string name="folder_icon_size">حجم الأيقونة</string>
+    <string name="folder_window_size">حجم النافذة</string>
+    <string name="folder_add_apps">إضافة برامج</string>
+    <string name="folder_reorder">إعادة الترتيب</string>
+    <string name="reorder_drag">بالسحب</string>
+    <string name="reorder_numbers">بالأرقام</string>
+    <string name="folder_save">حفظ الترتيب</string>
+    <string name="folder_apps_count">%1$d تطبيق</string>
+    <string name="folder_empty">فولدر فاضي</string>
+    <string name="folder_remove_app">إزالة من الفولدر</string>
+    <string name="choose_apps">اختر التطبيقات</string>
+
+    <!-- الويدجت -->
+    <string name="widgets_section">الويدجت</string>
+    <string name="widget_add">إضافة ويدجت</string>
+    <string name="widget_clock">ساعة</string>
+    <string name="widget_battery">بطارية</string>
+    <string name="widget_calendar">تقويم</string>
+    <string name="widget_weather">طقس</string>
+    <string name="widget_color">اللون</string>
+    <string name="widget_size">الحجم</string>
+    <string name="widget_alpha">الشفافية</string>
+    <string name="widget_delete">حذف الويدجت</string>
+    <string name="widget_settings">إعدادات الويدجت</string>
+    <string name="widget_size_small">صغير</string>
+    <string name="widget_size_medium">وسط</string>
+    <string name="widget_size_large">كبير</string>
+    <string name="widget_pick_type">نوع الويدجت</string>
+
+    <!-- الإيماءات -->
+    <string name="gestures_section">الإيماءات</string>
+    <string name="gestures_hint">اختر الفعل اللي يحصل لكل إيماءة على الشاشة الرئيسية.</string>
+    <string name="gesture_none">بدون</string>
+    <string name="gesture_swipe_up">سحب لأعلى</string>
+    <string name="gesture_swipe_down">سحب لأسفل</string>
+    <string name="gesture_swipe_left">سحب لليسار</string>
+    <string name="gesture_swipe_right">سحب لليمين</string>
+    <string name="gesture_swipe_up_two">سحب لأعلى بإصبعين</string>
+    <string name="gesture_swipe_down_two">سحب لأسفل بإصبعين</string>
+    <string name="gesture_swipe_left_two">سحب لليسار بإصبعين</string>
+    <string name="gesture_swipe_right_two">سحب لليمين بإصبعين</string>
+    <string name="gesture_pinch_in">ضم الأصابع</string>
+    <string name="gesture_pinch_out">توسيع الأصابع</string>
+    <string name="gesture_double_tap">نقرتين</string>
+    <string name="action_none">بدون</string>
+    <string name="action_open_drawer">فتح الدرج</string>
+    <string name="action_open_search">البحث في التطبيقات</string>
+    <string name="action_open_camera">الكاميرا</string>
+    <string name="action_open_settings">الإعدادات</string>
+    <string name="action_open_news">صفحة الأخبار</string>
+    <string name="action_open_notifications">الإشعارات</string>
+
+    <!-- الصلاحيات -->
+    <string name="permissions_section">الصلاحيات</string>
+    <string name="accessibility_enable">خدمة إمكانية الوصول</string>
+    <string name="accessibility_hint">فعّل خدمة إمكانية الوصول عشان النقرتين تقفل الشاشة وإيماءة الإشعارات تشتغل.</string>
+    <string name="accessibility_service_description">بتسمح للانشر بفتح درج الإشعارات وقفل الشاشة.</string>
+    <string name="notifications_permission">صلاحية الإشعارات</string>
+    <string name="need_accessibility">فعّل خدمة إمكانية الوصول الأول</string>
+    <string name="double_tap_lock">النقرتين على الشاشة الرئيسية تقفل التلفون</string>
+
+    <!-- صفحة الأخبار -->
+    <string name="news_title">الأخبار</string>
+    <string name="news_show">إظهار صفحة الأخبار</string>
+    <string name="news_empty">لا توجد أخبار</string>
+    <string name="news_hint">الصفحة دي مؤقتة — هنضيف مصادر الأخبار بعدين.</string>
+
+    <!-- الصفحة الرئيسية -->
+    <string name="home_page_section">الصفحة الرئيسية</string>
+    <string name="default_page">الصفحة الافتراضية</string>
+    <string name="page_label">صفحة %1$d</string>
+    <string name="home_new_folder">فولدر جديد</string>
+    <string name="home_add_widget">إضافة ويدجت</string>
+
+    <!-- أقسام الإعدادات -->
+    <string name="settings_advanced">عام</string>
+    <string name="settings_home_sub">الشبكة والأيقونات والصفحات</string>
+    <string name="settings_drawer_sub">الأعمدة والتابات</string>
+    <string name="settings_widgets_sub">الويدجت على الشاشة الرئيسية</string>
+    <string name="settings_gestures_sub">حدّد فعل كل إيماءة</string>
+    <string name="settings_wallpaper_sub">الصورة والتعتيم</string>
+    <string name="settings_hidden_sub">إظهار التطبيقات المخفية</string>
+    <string name="settings_advanced_sub">إعادة الضبط والشاشة الافتراضية</string>
+    <string name="widgets_empty">لا توجد ويدجت مضافة بعد</string>
+
+    <string name="save">حفظ</string>
+    <string name="delete">حذف</string>
+    <string name="add">إضافة</string>
+    <string name="apply">تطبيق</string>
+    <string name="done">تم</string>
+</resources>
