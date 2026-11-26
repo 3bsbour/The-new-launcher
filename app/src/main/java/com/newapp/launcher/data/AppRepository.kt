@@ -3,7 +3,9 @@ package com.newapp.launcher.data
 import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
+import android.content.pm.LauncherApps
 import android.content.pm.PackageManager
+import android.os.Process
 import android.graphics.Bitmap
 import android.graphics.Canvas
 import android.graphics.Paint
@@ -56,6 +58,38 @@ class AppRepository(private val context: Context) {
         val intent = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS, Uri.parse("package:${app.packageName}"))
             .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
         runCatching { context.startActivity(intent) }
+    }
+
+    /** اختصارات التطبيق (زي «الكاميرا» في تطبيق الكاميرا). بتشتغل لما اللانشر يبقى هو الافتراضي */
+    fun shortcutsOf(app: AppInfo): List<AppShortcut> {
+        val la = context.getSystemService(LauncherApps::class.java) ?: return emptyList()
+        return runCatching {
+            if (!la.hasShortcutHostPermission()) return emptyList()
+            val query = LauncherApps.ShortcutQuery()
+                .setPackage(app.packageName)
+                .setQueryFlags(
+                    LauncherApps.ShortcutQuery.FLAG_MATCH_DYNAMIC or
+                        LauncherApps.ShortcutQuery.FLAG_MATCH_MANIFEST
+                )
+            la.getShortcuts(query, Process.myUserHandle()).orEmpty()
+                .filter { it.isEnabled }
+                .take(4)
+                .map { si ->
+                    val label = (si.shortLabel ?: si.longLabel)?.toString().orEmpty()
+                    val icon = runCatching {
+                        la.getShortcutIconDrawable(si, 0)?.toIconBitmap(96)
+                    }.getOrNull()
+                    AppShortcut(si.id, si.`package`, label, icon)
+                }
+                .filter { it.label.isNotBlank() }
+        }.getOrDefault(emptyList())
+    }
+
+    fun startShortcut(shortcut: AppShortcut) {
+        val la = context.getSystemService(LauncherApps::class.java) ?: return
+        runCatching {
+            la.startShortcut(shortcut.packageName, shortcut.id, null, null, Process.myUserHandle())
+        }
     }
 
     fun uninstall(app: AppInfo) {
