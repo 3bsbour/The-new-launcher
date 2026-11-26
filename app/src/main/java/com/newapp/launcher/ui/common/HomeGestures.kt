@@ -53,11 +53,20 @@ fun rememberHomeGestures(
             var dragNotified = false
             var prevTime = down.uptimeMillis
             var velocity = 0f
+            var abandoned = false
+            val longPressMs = viewConfiguration.longPressTimeoutMillis
 
             while (true) {
                 val event = awaitPointerEvent(PointerEventPass.Initial)
                 val pressed = event.changes.filter { it.pressed }
                 if (pressed.isEmpty()) break
+                // لو الإصبع ثابت لحد الضغط المطوّل، يبقى ده سحب وإفلات لأيقونة: الإيماءات متتداخلش
+                if (!abandoned && !dragNotified && pressed.size == 1 &&
+                    pressed[0].uptimeMillis - down.uptimeMillis >= longPressMs
+                ) {
+                    abandoned = true
+                }
+                if (abandoned) continue
                 maxPointers = maxOf(maxPointers, pressed.size)
 
                 var cx = 0f
@@ -101,6 +110,7 @@ fun rememberHomeGestures(
                 }
             }
 
+            if (abandoned) return@awaitEachGesture
             if (dragNotified) dragEnd.value(totalDy, velocity)
 
             if (maxPointers >= 2) {
