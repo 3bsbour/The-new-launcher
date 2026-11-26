@@ -169,6 +169,10 @@ class LauncherViewModel(app: Application) : AndroidViewModel(app) {
 
     fun openAppInfo(app: AppInfo) = repo.openAppInfo(app)
 
+    fun shortcutsOf(app: AppInfo) = repo.shortcutsOf(app)
+
+    fun startShortcut(shortcut: com.newapp.launcher.data.AppShortcut) = repo.startShortcut(shortcut)
+
     fun uninstall(app: AppInfo) = repo.uninstall(app)
 
     fun openCamera() {
