@@ -8,7 +8,7 @@ android {
     compileSdk = 37
 
     defaultConfig {
-        applicationId = "com.newapp.launcher"
+        applicationId = "com.newapp.launcher.v2"
         minSdk = 29
         targetSdk = 36
         versionCode = 1
