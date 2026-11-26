@@ -104,12 +104,9 @@ fun buildDrawerTabs(
     prefs: LauncherPrefs,
     arabicFirst: Boolean
 ): List<DrawerTabItem> {
-    val letterKeys = apps.map { Alphabet.keyOf(prefs.labelOf(it)) }
-    val letters = Alphabet.sortKeys(letterKeys, arabicFirst)
-        .map { DrawerTabItem(it, TabKind.LETTER) }
     val all = DrawerTabItem(LauncherPrefs.TAB_ALL, TabKind.ALL)
     val customs = prefs.drawerTabs.map { DrawerTabItem("tab:${it.id}", TabKind.CUSTOM) }
-    return letters + all + customs
+    return listOf(all) + customs
 }
 
 @Composable
@@ -164,12 +161,8 @@ fun AppDrawer(
     val appsByKey = remember(apps) { apps.associateBy { it.key } }
 
     // فلترة التابات: نخفي "كل التطبيقات" من شريط التابات لأنه سيكون بصفحة مستقلة مع الفاست سكولر
-    val pagerTabs = remember(tabs) { tabs.filter { it.kind != TabKind.ALL } }
-    val pagerTabLabels = remember(pagerTabs, labels, tabs) {
-        pagerTabs.map { item ->
-            labels[tabs.indexOf(item)]
-        }
-    }
+    val pagerTabs = tabs
+    val pagerTabLabels = labels
     val pageCount = pagerTabs.size.coerceAtLeast(1)
     val pagerState = rememberPagerState(pageCount = { pageCount })
     val tabListState = rememberLazyListState()
@@ -183,7 +176,7 @@ fun AppDrawer(
         }
     }
     LaunchedEffect(pagerState.currentPage, pagerTabs.size) {
-        if (pagerTabs.isNotEmpty()) tabListState.animateScrollToItem(pagerState.currentPage)
+        if (pagerTabs.isNotEmpty()) tabListState.animateScrollToItem(if (pagerState.currentPage == 0) 0 else pagerState.currentPage + 1)
     }
 
     var tabMenu by remember { mutableStateOf<Pair<DrawerTabItem, Offset>?>(null) }
@@ -200,9 +193,6 @@ fun AppDrawer(
     val fastScrollerLetters = remember(appsByLetter, arabicFirst) {
         Alphabet.sortKeys(appsByLetter.keys, arabicFirst)
     }
-    var selectedLetterIndex by remember(fastScrollerLetters) { mutableStateOf(0) }
-    var selectedLetter by remember(fastScrollerLetters) { mutableStateOf(fastScrollerLetters.firstOrNull() ?: "") }
-    var showFastScrollerHint by remember { mutableStateOf(false) }
     val listState = rememberLazyGridState()
 
     LaunchedEffect(Unit) {
@@ -347,53 +337,53 @@ fun AppDrawer(
                 }
             }
         } else {
-            // وضع التصفح العادي: صفحة "كل التطبيقات" مع الفاست سكولر + تابات الحروف والتابات المخصصة
-            val allAppsIndex = tabs.indexOfFirst { it.kind == TabKind.ALL }
-            val showAllAppsPage = allAppsIndex >= 0 && (pagerTabs.isEmpty() || pagerState.currentPage == 0)
-            Box(Modifier.fillMaxSize()) {
-                // محتوى الصفحات
-                Column(Modifier.fillMaxSize()) {
-                    // شريط التابات (للحروف والتابات المخصصة فقط)
-                    if (pagerTabs.isNotEmpty()) {
-                        LazyRow(
-                            state = tabListState,
-                            modifier = Modifier.fillMaxWidth(),
-                            contentPadding = PaddingValues(horizontal = 12.dp),
-                            horizontalArrangement = Arrangement.spacedBy(8.dp)
-                        ) {
-                            items(pagerTabs, key = { it.key }) { item ->
-                                val selected = pagerTabs.getOrNull(pagerState.currentPage)?.key == item.key
-                                TabChip(
-                                    label = pagerTabLabels.getOrElse(pagerTabs.indexOf(item)) { item.key },
-                                    selected = selected,
-                                    onClick = {
-                                        val index = pagerTabs.indexOf(item)
-                                        if (index >= 0) scope.launch { pagerState.animateScrollToPage(index) }
-                                    },
-                                    onLongClick = { anchor -> tabMenu = item to anchor }
-                                )
-                            }
-                            item {
-                                TabChip(
-                                    label = "+",
-                                    selected = false,
-                                    onClick = { showNewTab = true },
-                                    onLongClick = {}
-                                )
-                            }
-                        }
+            // وضع التصفح العادي: تاب "كل التطبيقات" (الوحيد اللي فيه شريط الحروف) + التابات المخصصة
+            Column(Modifier.fillMaxSize()) {
+                LazyRow(
+                    state = tabListState,
+                    modifier = Modifier.fillMaxWidth(),
+                    contentPadding = PaddingValues(horizontal = 12.dp),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    item(key = "tab_all") {
+                        TabChip(
+                            label = allLabel,
+                            selected = pagerState.currentPage == 0,
+                            onClick = { scope.launch { pagerState.animateScrollToPage(0) } },
+                            onLongClick = { anchor -> pagerTabs.firstOrNull()?.let { tabMenu = it to anchor } }
+                        )
                     }
+                    item(key = "tab_plus") {
+                        TabChip(
+                            label = "+",
+                            selected = false,
+                            onClick = { showNewTab = true },
+                            onLongClick = {}
+                        )
+                    }
+                    items(pagerTabs.drop(1), key = { it.key }) { item ->
+                        val index = pagerTabs.indexOf(item)
+                        TabChip(
+                            label = pagerTabLabels.getOrElse(index) { item.key },
+                            selected = pagerState.currentPage == index,
+                            onClick = { if (index >= 0) scope.launch { pagerState.animateScrollToPage(index) } },
+                            onLongClick = { anchor -> tabMenu = item to anchor }
+                        )
+                    }
+                }
 
-                    // صفحة "كل التطبيقات" مع الفاست سكولر
-                    if (showAllAppsPage) {
-                        AllAppsPageWithFastScroller(
+                HorizontalPager(
+                    state = pagerState,
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .weight(1f)
+                ) { page ->
+                    val item = pagerTabs.getOrNull(page)
+                    if (item != null && item.kind == TabKind.ALL) {
+                        AllAppsPage(
                             prefs = prefs,
-                            sortedApps = sortedApps,
                             appsByLetter = appsByLetter,
-                            fastScrollerLetters = fastScrollerLetters,
-                            selectedLetterIndex = selectedLetterIndex,
-                            selectedLetter = selectedLetter,
-                            showFastScrollerHint = showFastScrollerHint,
+                            letters = fastScrollerLetters,
                             listState = listState,
                             icons = icons,
                             requestIcon = requestIcon,
@@ -404,115 +394,43 @@ fun AppDrawer(
                             scope = scope,
                             columns = prefs.drawerColumns
                         )
-                    } else if (pagerTabs.isNotEmpty()) {
-                        // تابات الحروف والتابات المخصصة
-                        HorizontalPager(
-                            state = pagerState,
-                            modifier = Modifier
-                                .fillMaxSize()
-                                .weight(1f)
-                        ) { page ->
-                            val item = pagerTabs.getOrNull(page)
-                            if (item != null) {
-                                val tabApps = when (item.kind) {
-                                    TabKind.LETTER -> appsByLetter[item.key].orEmpty()
-                                    TabKind.CUSTOM -> {
-                                        val custom = prefs.drawerTabs.firstOrNull { "tab:${it.id}" == item.key }
-                                        custom?.apps?.mapNotNull { key -> appsByKey[key] }
-                                            ?: emptyList()
-                                    }
-                                    else -> emptyList()
-                                }
-                                LazyVerticalGrid(
-                                    columns = GridCells.Fixed(prefs.drawerColumns),
-                                    modifier = Modifier.fillMaxSize(),
-                                    contentPadding = PaddingValues(horizontal = 12.dp, vertical = 12.dp),
-                                    verticalArrangement = Arrangement.spacedBy(16.dp),
-                                    horizontalArrangement = Arrangement.spacedBy(6.dp)
-                                ) {
-                                    if (tabApps.isEmpty()) {
-                                        item(span = { GridItemSpan(maxLineSpan) }) {
-                                            Text(
-                                                text = stringResource(R.string.tab_no_apps),
-                                                color = Color.White.copy(alpha = 0.6f),
-                                                style = MaterialTheme.typography.bodyMedium,
-                                                modifier = Modifier.padding(vertical = 12.dp)
-                                            )
-                                        }
-                                    }
-                                    items(tabApps, key = { it.key }) { app ->
-                                        DrawerAppItem(
-                                            app = app,
-                                            label = prefs.labelOf(app),
-                                            icons = icons,
-                                            requestIcon = requestIcon,
-                                            onClick = { onLaunch(app) },
-                                            onLongClick = { anchor ->
-                                                onItemLongPress(app, 0, Slot.DRAWER, anchor)
-                                            }
-                                        )
-                                    }
-                                    if (item.kind == TabKind.CUSTOM) {
-                                        item(key = "add_to_${item.key}") {
-                                            AddAppTile(onClick = { addAppsToTab = item })
-                                        }
-                                    }
+                    } else if (item != null) {
+                        val custom = prefs.drawerTabs.firstOrNull { "tab:${it.id}" == item.key }
+                        val tabApps = custom?.apps?.mapNotNull { key -> appsByKey[key] } ?: emptyList()
+                        LazyVerticalGrid(
+                            columns = GridCells.Fixed(prefs.drawerColumns),
+                            modifier = Modifier.fillMaxSize(),
+                            contentPadding = PaddingValues(horizontal = 12.dp, vertical = 12.dp),
+                            verticalArrangement = Arrangement.spacedBy(16.dp),
+                            horizontalArrangement = Arrangement.spacedBy(6.dp)
+                        ) {
+                            if (tabApps.isEmpty()) {
+                                item(span = { GridItemSpan(maxLineSpan) }) {
+                                    Text(
+                                        text = stringResource(R.string.tab_no_apps),
+                                        color = Color.White.copy(alpha = 0.6f),
+                                        style = MaterialTheme.typography.bodyMedium,
+                                        modifier = Modifier.padding(vertical = 12.dp)
+                                    )
                                 }
                             }
-                        }
-                    } else if (tabs.isEmpty()) {
-                        // لا توجد تطبيقات
-                        Box(
-                            Modifier.fillMaxSize(),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Text(
-                                text = stringResource(R.string.no_results),
-                                color = Color.White.copy(alpha = 0.6f),
-                                style = MaterialTheme.typography.bodyMedium
-                            )
+                            items(tabApps, key = { it.key }) { app ->
+                                DrawerAppItem(
+                                    app = app,
+                                    label = prefs.labelOf(app),
+                                    icons = icons,
+                                    requestIcon = requestIcon,
+                                    onClick = { onLaunch(app) },
+                                    onLongClick = { anchor ->
+                                        onItemLongPress(app, 0, Slot.DRAWER, anchor)
+                                    }
+                                )
+                            }
+                            item(key = "add_to_${item.key}") {
+                                AddAppTile(onClick = { addAppsToTab = item })
+                            }
                         }
                     }
-                }
-
-                // الفاست سكولر الجانبي (يظهر فقط في صفحة "كل التطبيقات")
-                if (showAllAppsPage && fastScrollerLetters.isNotEmpty()) {
-                    FastScroller(
-                        letters = fastScrollerLetters,
-                        selectedIndex = selectedLetterIndex,
-                        selectedLetter = selectedLetter,
-                        showHint = showFastScrollerHint,
-                        onLetterClick = { index, letter ->
-                            selectedLetterIndex = index
-                            selectedLetter = letter
-                            // التمرير لأول تطبيق بهذا الحرف مع أنيميشن
-                            val appsForLetter = appsByLetter[letter].orEmpty()
-                            if (appsForLetter.isNotEmpty()) {
-                                val targetIndex = fastScrollerItemIndex(fastScrollerLetters, appsByLetter, letter)
-                                if (targetIndex >= 0) {
-                                    scope.launch { listState.animateScrollToItem(targetIndex) }
-                                }
-                            }
-                            showFastScrollerHint = true
-                            // إخفاء التلميح بعد فترة
-                            scope.launch {
-                                kotlinx.coroutines.delay(800)
-                                showFastScrollerHint = false
-                            }
-                        },
-                        onDrag = { index, letter ->
-                            selectedLetterIndex = index
-                            selectedLetter = letter
-                            val appsForLetter = appsByLetter[letter].orEmpty()
-                            if (appsForLetter.isNotEmpty()) {
-                                val targetIndex = fastScrollerItemIndex(fastScrollerLetters, appsByLetter, letter)
-                                if (targetIndex >= 0) {
-                                    scope.launch { listState.animateScrollToItem(targetIndex) }
-                                }
-                            }
-                            showFastScrollerHint = true
-                        }
-                    )
                 }
             }
         }
@@ -829,19 +747,12 @@ private fun fastScrollerItemIndex(letters: List<String>, appsByLetter: Map<Strin
     return index
 }
 
-/**
- * صفحة "كل التطبيقات" مع شريط الحروف الجانبي (FastScroller)
- * تعرض التطبيقات مجمعة حسب الحرف مع عناوين للحروف
- */
+/** تاب "كل التطبيقات": شريط حروف أفقي فوق + شبكة التطبيقات مجمعة بالحرف */
 @Composable
-private fun AllAppsPageWithFastScroller(
+private fun AllAppsPage(
     prefs: LauncherPrefs,
-    sortedApps: List<AppInfo>,
     appsByLetter: Map<String, List<AppInfo>>,
-    fastScrollerLetters: List<String>,
-    selectedLetterIndex: Int,
-    selectedLetter: String,
-    showFastScrollerHint: Boolean,
+    letters: List<String>,
     listState: LazyGridState,
     icons: IconStore,
     requestIcon: (AppInfo) -> Unit,
@@ -850,130 +761,62 @@ private fun AllAppsPageWithFastScroller(
     scope: CoroutineScope,
     columns: Int
 ) {
-    LazyVerticalGrid(
-        state = listState,
-        columns = GridCells.Fixed(columns),
-        modifier = Modifier.fillMaxSize(),
-        contentPadding = PaddingValues(horizontal = 12.dp, vertical = 12.dp),
-        verticalArrangement = Arrangement.spacedBy(16.dp),
-        horizontalArrangement = Arrangement.spacedBy(6.dp)
-    ) {
-        fastScrollerLetters.forEach { letter ->
-            val appsForLetter = appsByLetter[letter].orEmpty()
-            if (appsForLetter.isNotEmpty()) {
-                item(span = { GridItemSpan(maxLineSpan) }) {
-                    // عنوان الحرف
-                    Text(
-                        text = letter,
-                        color = Color.White.copy(alpha = 0.7f),
-                        style = MaterialTheme.typography.titleMedium,
-                        modifier = Modifier.padding(vertical = 8.dp)
-                    )
-                }
-                items(appsForLetter, key = { it.key }) { app ->
-                    DrawerAppItem(
-                        app = app,
-                        label = prefs.labelOf(app),
-                        icons = icons,
-                        requestIcon = requestIcon,
-                        onClick = { onLaunch(app) },
-                        onLongClick = { anchor -> onItemLongPress(app, anchor) }
-                    )
-                }
-            }
-        }
-    }
-}
-
-/**
- * شريط الحروف الجانبي (FastScroller) للتنقل السريع في قائمة التطبيقات
- * يدعم النقر على حرف، السحب، وتلميح متحرك للحرف الحالي
- */
-@Composable
-private fun FastScroller(
-    letters: List<String>,
-    selectedIndex: Int,
-    selectedLetter: String,
-    showHint: Boolean,
-    onLetterClick: (Int, String) -> Unit,
-    onDrag: (Int, String) -> Unit
-) {
-    // أنيميشن للتلميح
-    val hintAlpha by animateFloatAsState(
-        targetValue = if (showHint) 1f else 0f,
-        animationSpec = spring(dampingRatio = Spring.DampingRatioMediumBouncy, stiffness = Spring.StiffnessMedium)
-    )
-    
-    Box(
-        modifier = Modifier
-            .fillMaxHeight()
-            .width(32.dp)
-            .padding(end = 8.dp)
-            .pointerInput(letters) {
-                detectDragGestures(
-                    onDragStart = { position ->
-                        val index = (position.y / size.height.coerceAtLeast(1) * letters.size).toInt().coerceIn(0, letters.lastIndex)
-                        letters.getOrNull(index)?.let { onDrag(index, it) }
-                    },
-                    onDrag = { change, _ ->
-                        change.consume()
-                        val index = (change.position.y / size.height.coerceAtLeast(1) * letters.size).toInt().coerceIn(0, letters.lastIndex)
-                        letters.getOrNull(index)?.let { onDrag(index, it) }
-                    }
-                )
-            }
-    ) {
-        // خلفية الشريط
-        Box(
-            modifier = Modifier
-                .fillMaxHeight()
-                .width(24.dp)
-                .align(Alignment.CenterEnd)
-                .background(Color.White.copy(alpha = 0.1f))
-                .clip(RoundedCornerShape(12.dp))
-        )
-        
-        // الحروف
-        LazyColumn(
-            modifier = Modifier.fillMaxHeight(),
-            verticalArrangement = Arrangement.Center
+    var selected by remember(letters) { mutableStateOf(letters.firstOrNull().orEmpty()) }
+    Column(Modifier.fillMaxSize()) {
+        LazyRow(
+            modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
+            contentPadding = PaddingValues(horizontal = 12.dp),
+            horizontalArrangement = Arrangement.spacedBy(4.dp)
         ) {
             items(letters, key = { it }) { letter ->
-                val isSelected = letter == letters.getOrNull(selectedIndex)
+                val on = letter == selected
                 Text(
                     text = letter,
-                    color = if (isSelected) Color.White else Color.White.copy(alpha = 0.5f),
-                    fontSize = 11.sp,
-                    fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
+                    color = if (on) Color.White else Color.White.copy(alpha = 0.6f),
+                    fontSize = 14.sp,
+                    fontWeight = if (on) FontWeight.Bold else FontWeight.Normal,
                     modifier = Modifier
-                        .fillMaxWidth()
-                        .height(20.dp)
-                        .clickable { onLetterClick(letters.indexOf(letter), letter) }
-                        .wrapContentHeight(Alignment.CenterVertically)
+                        .clip(RoundedCornerShape(8.dp))
+                        .background(if (on) Color.White.copy(alpha = 0.16f) else Color.Transparent)
+                        .clickable {
+                            selected = letter
+                            val target = fastScrollerItemIndex(letters, appsByLetter, letter)
+                            if (target >= 0) scope.launch { listState.animateScrollToItem(target) }
+                        }
+                        .padding(horizontal = 10.dp, vertical = 6.dp)
                 )
             }
         }
-        
-        // تلميح الحرف الحالي (يظهر أثناء السحب أو النقر)
-        if (hintAlpha > 0.01f) {
-            Box(
-                modifier = Modifier
-                    .align(Alignment.CenterStart)
-                    .offset(x = (-80).dp)
-                    .graphicsLayer { alpha = hintAlpha }
-            ) {
-                Text(
-                    text = selectedLetter,
-                    color = Color.White,
-                    fontSize = 28.sp,
-                    fontWeight = FontWeight.Bold,
-                    modifier = Modifier
-                        .background(
-                            Color(0xF21B2029).copy(alpha = 0.9f),
-                            RoundedCornerShape(16.dp)
+        LazyVerticalGrid(
+            state = listState,
+            columns = GridCells.Fixed(columns),
+            modifier = Modifier.fillMaxSize(),
+            contentPadding = PaddingValues(horizontal = 12.dp, vertical = 12.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp),
+            horizontalArrangement = Arrangement.spacedBy(6.dp)
+        ) {
+            letters.forEach { letter ->
+                val appsForLetter = appsByLetter[letter].orEmpty()
+                if (appsForLetter.isNotEmpty()) {
+                    item(span = { GridItemSpan(maxLineSpan) }) {
+                        Text(
+                            text = letter,
+                            color = Color.White.copy(alpha = 0.7f),
+                            style = MaterialTheme.typography.titleMedium,
+                            modifier = Modifier.padding(vertical = 8.dp)
                         )
-                        .padding(horizontal = 16.dp, vertical = 8.dp)
-                )
+                    }
+                    items(appsForLetter, key = { it.key }) { app ->
+                        DrawerAppItem(
+                            app = app,
+                            label = prefs.labelOf(app),
+                            icons = icons,
+                            requestIcon = requestIcon,
+                            onClick = { onLaunch(app) },
+                            onLongClick = { anchor -> onItemLongPress(app, anchor) }
+                        )
+                    }
+                }
             }
         }
     }
