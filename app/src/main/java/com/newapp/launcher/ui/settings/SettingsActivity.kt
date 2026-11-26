@@ -69,7 +69,10 @@ class SettingsActivity : ComponentActivity() {
         setContent {
             LauncherTheme {
                 val vm: LauncherViewModel = viewModel()
-                SettingsScreen(vm = vm, onBack = { finish() })
+                val localePrefs by vm.prefs.collectAsStateWithLifecycle()
+                com.newapp.launcher.ui.theme.ProvideAppLocale(localePrefs.locale) {
+                    SettingsScreen(vm = vm, onBack = { finish() })
+                }
             }
         }
     }
@@ -564,9 +567,6 @@ private fun SettingsScreen(vm: LauncherViewModel, onBack: () -> Unit) {
             onPick = { value ->
                 val language = value.ifBlank { null }
                 vm.setLocale(language)
-                AppCompatDelegate.setApplicationLocales(
-                    LocaleListCompat.forLanguageTags(language.orEmpty())
-                )
                 showLanguagePicker = false
             },
             onDismiss = { showLanguagePicker = false }
