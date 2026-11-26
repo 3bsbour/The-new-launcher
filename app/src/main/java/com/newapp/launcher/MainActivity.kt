@@ -12,6 +12,8 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.newapp.launcher.ui.LauncherRoot
 import com.newapp.launcher.ui.LauncherViewModel
 import com.newapp.launcher.ui.theme.LauncherTheme
+import com.newapp.launcher.ui.theme.ProvideAppLocale
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 
 /**
  * شاشة الهوم الأساسية. أي ضغطة على زر الهوم وهي مفتوحة تزوّد العدّاد،
@@ -27,7 +29,10 @@ class MainActivity : ComponentActivity() {
         setContent {
             LauncherTheme {
                 val vm: LauncherViewModel = viewModel()
-                LauncherRoot(vm = vm, homePresses = homePresses)
+                val prefs by vm.prefs.collectAsStateWithLifecycle()
+                ProvideAppLocale(prefs.locale) {
+                    LauncherRoot(vm = vm, homePresses = homePresses)
+                }
             }
         }
     }
