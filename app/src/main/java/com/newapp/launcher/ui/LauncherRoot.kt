@@ -213,14 +213,20 @@ fun LauncherRoot(vm: LauncherViewModel, homePresses: Int, modifier: Modifier = M
 
     // لما السحب لأعلى مربوط بفتح الدرج، نخليه يتبع الإصبع بدل ما يستنى
     val followDrawer = actionOf(prefs, Gestures.SWIPE_UP) == Gestures.DRAWER
+    // سحب لأسفل مربوط بالإشعارات: بنفتح الإشعارات أول ما الإصبع يبدأ ينزل (مش لما يفلت)
+    val pullNotifications = actionOf(prefs, Gestures.SWIPE_DOWN) == Gestures.NOTIFICATIONS
+    var notifFired by remember { mutableStateOf(false) }
+    val pullThresholdPx = with(density) { 24.dp.toPx() }
 
     val gestureModifier = rememberHomeGestures(
         hasAction = { id ->
             if (id == Gestures.SWIPE_UP && followDrawer) false
+            else if (id == Gestures.SWIPE_DOWN && pullNotifications) false
             else actionOf(prefs, id) != Gestures.NONE
         },
         onGesture = { id -> runAction(actionOf(prefs, id)) },
         onVerticalDragStart = {
+            notifFired = false
             if (followDrawer && !drawerOpen) {
                 drawerAnim?.cancel()
                 drawerOffset = screenHeightPx
@@ -228,6 +234,10 @@ fun LauncherRoot(vm: LauncherViewModel, homePresses: Int, modifier: Modifier = M
             }
         },
         onVerticalDragProgress = { dy ->
+            if (pullNotifications && !drawerOpen && !notifFired && dy > pullThresholdPx) {
+                notifFired = true
+                openNotifications()
+            }
             if (followDrawer && drawerOpen) {
                 drawerAnim?.cancel()
                 drawerOffset = (screenHeightPx + dy).coerceIn(0f, screenHeightPx)
@@ -492,10 +502,20 @@ private fun AppMenu(
     onRename: () -> Unit,
     onDismiss: () -> Unit
 ) {
-    val primary = buildList {
-        add(ActionSpec(stringResource(R.string.menu_app_info), R.drawable.ic_info) {
+    val shortcuts = remember(app.key) { vm.shortcutsOf(app) }
+    val primary = listOf(
+        ActionSpec(stringResource(R.string.menu_uninstall), R.drawable.ic_uninstall) {
+            vm.uninstall(app)
+        },
+        ActionSpec(stringResource(R.string.menu_app_info), R.drawable.ic_info) {
             vm.openAppInfo(app)
-        })
+        }
+    )
+    val secondary = buildList {
+        shortcuts.forEach { sc ->
+            add(ActionSpec(sc.label, 0, sc.icon) { vm.startShortcut(sc) })
+        }
+        add(ActionSpec(stringResource(R.string.menu_rename), R.drawable.ic_edit) { onRename() })
         add(ActionSpec(stringResource(R.string.menu_hide), R.drawable.ic_hide) { vm.hideApp(app) })
         when (slot) {
             Slot.DRAWER ->
@@ -507,29 +527,26 @@ private fun AppMenu(
                     if (slot == Slot.DOCK) vm.removeFromDock(app) else vm.removeFromHome(app)
                 })
         }
-        add(ActionSpec(stringResource(R.string.menu_uninstall), R.drawable.ic_uninstall) {
-            vm.uninstall(app)
-        })
-    }
-    val secondary = buildList {
-        add(ActionSpec(stringResource(R.string.menu_rename), R.drawable.ic_edit) { onRename() })
         if (slot != Slot.DOCK) {
             add(ActionSpec(stringResource(R.string.menu_add_dock), R.drawable.ic_add) {
                 vm.addToDock(app)
             })
         }
-        if (slot != Slot.HOME) {
+        if (slot == Slot.HOME) {
+            // الأيقونة على الهوم أصلًا
+        } else if (slot == Slot.DOCK) {
             add(ActionSpec(stringResource(R.string.menu_add_home), R.drawable.ic_add) {
                 vm.addToHome(app)
             })
         }
     }
     ActionSheet(
-        title = prefs.labelOf(app),
+        title = "",
         primary = primary,
         secondary = secondary,
         anchor = anchor,
-        onDismiss = onDismiss
+        onDismiss = onDismiss,
+        iconOnlyPrimary = true
     )
 }
 
